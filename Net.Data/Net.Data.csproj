@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Net.Business.Entities\Net.Business.Entities.csproj" />
+    <ProjectReference Include="..\Net.Connection.ServiceLayer\Net.Connection.ServiceLayer.csproj" />
+    <ProjectReference Include="..\Net.Connection\Net.Connection.csproj" />
+    <ProjectReference Include="..\Net.CrossCotting\Net.CrossCotting.csproj" />
+    <ProjectReference Include="..\Net.TCI\Net.TCI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="CSFDLLEFACT">
+      <HintPath>..\DLL\CSFDLLEFACT.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

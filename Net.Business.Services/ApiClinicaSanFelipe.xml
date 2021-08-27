@@ -1,0 +1,535 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ApiClinicaSanFelipe</name>
+    </assembly>
+    <members>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListPedidosPorRangoFechas(System.DateTime,System.DateTime)">
+            <summary>
+            Listara los pedidos por rango de fechas
+            </summary>
+            <param name="fechainicio"> Fecha de Inicio</param>
+            <param name="fechafin">Fecha Fin</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListDetallePedidoPorPedido(System.String)">
+            <summary>
+            Listara el detalle del pedido
+            </summary>
+            <param name="codpedido">Codigo de Pedido</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListRecetasPorRangoFechas(System.DateTime,System.DateTime)">
+            <summary>
+            Listara las recetas por rango de fechas
+            </summary>
+            <param name="fechainicio">Fecha Inicio</param>
+            <param name="fechafin">Fecha Fin</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListDetalleRecetaPorReceta(System.Int32)">
+            <summary>
+            Listara el detalle de la receta
+            </summary>
+            <param name="id">Id Receta</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.RegistrarPicking(Net.Business.DTO.DtoPickingRegistrar)">
+            <summary>
+            Registrar Picking
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.ModificarEstadoPedido(Net.Business.DTO.DtoPickingModificarEstadoPedido)">
+            <summary>
+            Actualizar Estado del Picking Pedido
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.ModificarEstadoReceta(Net.Business.DTO.DtoPickingModificarEstadoReceta)">
+            <summary>
+            Actualizar Estado del Picking receta
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.EliminarPicking(Net.Business.DTO.DtoPickingEliminar)">
+            <summary>
+            Eliminar registro logicos
+            </summary>
+            <param name="value">Body para eliminar</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListConsolidadoPorFiltro(System.DateTime,System.DateTime)">
+            <summary>
+            Listado de Consolidados
+            </summary>
+            <param name="fechainicio">Fecha Inicio</param>
+            <param name="fechafin">Fecha Fin</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.GetListDetalleConsolidado(System.Int32)">
+            <summary>
+            Listara el detalle de un consolidado especifico
+            </summary>
+            <param name="idconsolidado">Id Consolidado</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ApuController.RegistrarConsolidadoPicking(Net.Business.DTO.DtoConsolidadoPedidoPickingRegistrar)">
+            <summary>
+            Registrar Consolidado - Picking
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.AtencionController.GetListPacientePorFiltros(System.String,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="opcion"></param>
+            <param name="codpaciente"></param>
+            <param name="nombres"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.CentroController.GetListCentroContains(System.String)">
+            <summary>
+            Lista los almacenes que tienen la palabra filtrada
+            </summary>
+            <param name="nombre">palabra filtrada</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.MedicoController.GetListMedicoPorNombre(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="nombre"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.MedicoController.GetListMedicoPorAtencion(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codAtencion"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PacienteController.GetPacientePorAtencion(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codAtencion"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PersonalClinicaController.GetListPersonalClinicaPorNombre(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="nombre"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanesController.GetByFiltros(Net.Business.DTO.DtoPlanesFind)">
+            <summary>
+            Obtener lista de registros
+            </summary>
+            <param name="value">Este es el cuerpo para enviar los parametros</param>
+            <returns>Retorna lista</returns>
+            <response code="200">Devuelve el listado completo </response>
+            <response code="404">Si no existen datos</response>   
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanesController.GetbyCodigo(System.String)">
+            <summary>
+            Obtener un registro individual segun el ID
+            </summary>
+            <param name="id">Id de Usuarii</param>
+            <returns>Devuelve un solo registro</returns>
+            <response code="200">Devuelve el listado completo </response>
+            <response code="404">Si no existen datos</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanesController.Registrar(Net.Business.DTO.DtoPlanesRegistrar)">
+            <summary>
+            Crear una nueva registro
+            </summary>
+            <param name="value"></param>
+            <returns>Id del registro creado</returns>
+            <response code="201">Devuelve el elemento recién creado</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>  
+            <response code="500">Algo salio mal guardando el registro</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanesController.Modificar(Net.Business.DTO.DtoPlanesModificar)">
+            <summary>
+            Actualizar un registro existente
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+            <response code="204">Actualizado Satisfactoriamente</response>
+            <response code="404">Si el objeto enviado es nulo o invalido</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanesController.Eliminar(Net.Business.DTO.DtoPlanesEliminar)">
+             <summary>
+             Eliminar un registro existente
+             </summary>
+             <param name="value"></param>
+             <returns></returns>
+            <response code="204">Eliminado Satisfactoriamente</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>
+            <response code="409">Si ocurrio un conflicto</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetListaCuadredeCajaGeneralPorFiltro(System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Se invoca en: Botón buscar
+            </summary>
+            <param name="fecha1"></param>
+            <param name="fecha2"></param>
+            <param name="coduser"></param>
+            <param name="codcentro"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetListaCuadredeCajaPorFiltro(System.String)">
+            <summary>
+            Se invoca en: Botón Buscar y evento click de grilla caja
+            </summary>
+            <param name="documento"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.RegistrarPorUsuario(Net.Business.DTO.Planilla.DtoPlanillaRegistrarPorUsuario)">
+            <summary>
+            Se invoca en: Botón procesar
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.cambiarFecha(Net.Business.DTO.Planilla.DtoPlanillaModificar)">
+            <summary>
+            Se invoca en: Botón cambiar fecha
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.anular(Net.Business.DTO.Planilla.DtoPlanillaModificar)">
+            <summary>
+            Se invoca en: Botón borrar
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetPlanillasPorFiltro(System.String,System.Int32,System.Int32,System.Int32,System.String)">
+            <summary>
+            Se invoca en: Botón borrar
+            </summary>
+            <param name="buscar"></param>
+            <param name="key"></param>
+            <param name="numerolineas"></param>
+            <param name="orden"></param>
+            <param name="serie"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetListaPlanillasPorFiltro(System.String,System.Int32,System.Int32,System.Int32,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Se invoca en: Load, Botón borrar, consultar, cambiar fecha, Combo Serie y retornar
+            </summary>
+            <param name="buscar"></param>
+            <param name="key"></param>
+            <param name="numerolineas"></param>
+            <param name="orden"></param>
+            <param name="serie"></param>
+            <param name="codcentro"></param>
+            <param name="idusuario"></param>
+            <param name="numeroPlanilla"></param>
+            <param name="fechaInicio"></param>
+            <param name="fechaFin"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetRpCuadreCajaPorFiltro(System.String,System.String,System.String,System.String,System.String,System.Decimal)">
+            <summary>
+            Se invoca en: Botón imprimir
+            </summary>
+            <param name="fechainicio"></param>
+            <param name="fechafin"></param>
+            <param name="coduser"></param>
+            <param name="codcentro"></param>
+            <param name="numeroplanilla"></param>
+            <param name="dolares"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetRpCuadreCajaDetalladoPorFiltro(System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Se invoca en: Botón imprimir detalle
+            </summary>
+            <param name="fechainicio"></param>
+            <param name="fechafin"></param>
+            <param name="coduserp"></param>
+            <param name="codcentro"></param>
+            <param name="numeroplanilla"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetTablaLogisticaPorFiltros(System.String,System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Se invoca en: txtCodCentro_LostFocus, Form_KeyDown y método Hoja
+            </summary>
+            <param name="codtabla"></param>
+            <param name="buscar"></param>
+            <param name="key"></param>
+            <param name="numerolineas"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetListTablaLogisticaPorFiltros(System.String,System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Se invoca: Para llenar la serie
+            </summary>
+            <param name="codtabla"></param>
+            <param name="buscar"></param>
+            <param name="key"></param>
+            <param name="numerolineas"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetUsuarioPersonaFiltroNombre(System.String)">
+            <summary>
+            Se invoca en: txtCodUsuario_LostFocus
+            </summary>
+            <param name="nombre"></param>
+            <param name="estadodf"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetInformePorFiltro(System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Se invoca en: Imprimir_TextBox
+            </summary>
+            <param name="buscar"></param>
+            <param name="key"></param>
+            <param name="numerolineas"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.PlanillaController.GetPerfilUsuario(System.Int32,System.Int32)">
+            <summary>
+            Se invoca en: Form_Activate
+            </summary>
+            <param name="idemodulo"></param>
+            <param name="ideusuario"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.ProductoController.GetListProductoAlternativoPorCodigo(System.String,System.String,System.String)">
+            <summary>
+            Lista Generico por codigo
+            </summary>
+            <param name="codigo"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.SerieController.Registrar(Net.Business.DTO.DtoSerieRegistrar)">
+            <summary>
+            Crear una nueva registro
+            </summary>
+            <param name="value"></param>
+            <returns>Id del registro creado</returns>
+            <response code="201">Devuelve el elemento recién creado</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>  
+            <response code="500">Algo salio mal guardando el registro</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.SeriePorMaquinaController.GetSeriePorMaquinaPorId(System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.SeriePorMaquinaController.Registrar(Net.Business.DTO.DtoSeriePorMaquinaRegistrar)">
+            <summary>
+            Crear una nueva registro
+            </summary>
+            <param name="value"></param>
+            <returns>Id del registro creado</returns>
+            <response code="201">Devuelve el elemento recién creado</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>  
+            <response code="500">Algo salio mal guardando el registro</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.SeriePorMaquinaController.Modificar(Net.Business.DTO.DtoSeriePorMaquinaModificar)">
+            <summary>
+            Actualizar un registro existente
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+            <response code="204">Actualizado Satisfactoriamente</response>
+            <response code="404">Si el objeto enviado es nulo o invalido</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.SeriePorMaquinaController.Eliminar(Net.Business.DTO.DtoSeriePorMaquinaEliminar)">
+             <summary>
+             Eliminar un registro existente
+             </summary>
+             <param name="value"></param>
+             <returns></returns>
+            <response code="204">Eliminado Satisfactoriamente</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>
+            <response code="409">Si ocurrio un conflicto</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.TerminalController.GetTerminal">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetVentaCabeceraPorCodVenta(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codventa"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetDatoCardCodeConsulta(System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="tipoCliente"></param>
+            <param name="codCliente"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetVentaDetallePorCodVenta(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codventa"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetRucConsultav2PorFiltro(System.String,System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codPaciente"></param>
+            <param name="codAseguradora"></param>
+            <param name="codCia"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetMdsynPagosConsulta(System.Int64,System.Int32,System.Int32,System.String,System.String,System.Int32)">
+            <summary>
+            
+            </summary>
+            <param name="ide_pagos_bot"></param>
+            <param name="ide_mdsyn_reserva"></param>
+            <param name="ide_correl_reserva"></param>
+            <param name="cod_liquidacion"></param>
+            <param name="cod_venta"></param>
+            <param name="orden"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetLimiteConsumoPersonalPorCodPersonal(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codPersonal"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GenerarPagar(Net.Business.DTO.DtoComprobanteCabeceraRegistrar)">
+            <summary>
+            
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetObtener">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetCorrelativoConsulta">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaCajaController.GetVistaPrevia(System.String)">
+            <summary>
+            
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaConfiguracionController.GetByFiltros(Net.Business.DTO.DtoVentasConfiguracionFind)">
+            <summary>
+            Obtener lista de registros
+            </summary>
+            <param name="value">Este es el cuerpo para enviar los parametros</param>
+            <returns>Retorna lista</returns>
+            <response code="200">Devuelve el listado completo </response>
+            <response code="404">Si no existen datos</response>   
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaConfiguracionController.GetbyIdVentaConfiguracion(System.Int32)">
+            <summary>
+            Obtener un registro individual segun el ID
+            </summary>
+            <param name="id">Id de Usuarii</param>
+            <returns>Devuelve un solo registro</returns>
+            <response code="200">Devuelve el listado completo </response>
+            <response code="404">Si no existen datos</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaConfiguracionController.Registrar(Net.Business.DTO.DtoVentasConfiguracionRegistrar)">
+            <summary>
+            Crear una nueva registro
+            </summary>
+            <param name="value"></param>
+            <returns>Id del registro creado</returns>
+            <response code="201">Devuelve el elemento recién creado</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>  
+            <response code="500">Algo salio mal guardando el registro</response>  
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaConfiguracionController.Modificar(Net.Business.DTO.DtoVentasConfiguracionModificar)">
+            <summary>
+            Actualizar un registro existente
+            </summary>
+            <param name="value"></param>
+            <returns></returns>
+            <response code="204">Actualizado Satisfactoriamente</response>
+            <response code="404">Si el objeto enviado es nulo o invalido</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaConfiguracionController.Eliminar(Net.Business.DTO.DtoVentasConfiguracionEliminar)">
+             <summary>
+             Eliminar un registro existente
+             </summary>
+             <param name="value"></param>
+             <returns></returns>
+            <response code="204">Eliminado Satisfactoriamente</response>
+            <response code="400">Si el objeto enviado es nulo o invalido</response>
+            <response code="409">Si ocurrio un conflicto</response>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaController.GetVentaPorCodVenta(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="codventa"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaController.GetVentaCabeceraPendientePorFiltro(System.DateTime)">
+            <summary>
+            
+            </summary>
+            <param name="fecha"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.VentaDevolucionController.GetVentasPorAtencion(Net.Business.DTO.DtoVentaDevolucionFind)">
+            <summary>
+            Obtener lista de registros
+            </summary>
+            <param name="value">Este es el cuerpo para enviar los parametros</param>
+            <returns>Retorna lista</returns>
+            <response code="200">Devuelve el listado completo </response>
+            <response code="404">Si no existen datos</response>   
+        </member>
+        <member name="M:Net.Business.Services.Controllers.WarehousesController.GetListWarehousesContains(System.String)">
+            <summary>
+            Lista los almacenes que tienen la palabra filtrada
+            </summary>
+            <param name="warehouseName">palabra filtrada</param>
+            <returns></returns>
+        </member>
+        <member name="M:Net.Business.Services.Controllers.WarehousesController.GetWarehousesPorCodigo(System.String)">
+            <summary>
+            
+            </summary>
+            <param name="warehouseCode"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>
