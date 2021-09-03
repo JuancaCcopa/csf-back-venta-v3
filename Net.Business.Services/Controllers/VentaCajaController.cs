@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Net.Business.DTO;
 using Net.Data;
+using wsComprobanteTCI;
+using static wsComprobanteTCI.WSComprobanteSoapClient;
 
 namespace Net.Business.Services.Controllers
 {
@@ -17,9 +19,11 @@ namespace Net.Business.Services.Controllers
     public class VentaCajaController : ControllerBase
     {
         private readonly IRepositoryWrapper _repository;
+
         public VentaCajaController(IRepositoryWrapper repository)
         {
             this._repository = repository;
+
         }
 
         /// <summary>
@@ -359,103 +363,170 @@ namespace Net.Business.Services.Controllers
             return Ok(objectGetAll.data);
         }
 
-        //[HttpGet("{codventa}", Name = "GenerarValeVentaPrint")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         [ProducesDefaultResponseType]
-        public async Task<FileContentResult> GenerarValeVentaPrint(string codventa,string maquina,int idusuario,int orden)
+        public async Task<FileContentResult> GenerarPreVistaPrint(string codventa,string maquina,int idusuario,int orden)
         {
-            //string codcomprobante,string maquina,int idusuario, int orden
-            var objectGetById = await _repository.VentaCaja.GenerarValeVentaPrint(codventa, maquina, idusuario, orden);
-            
-            var pdf = File(objectGetById.data.GetBuffer(), "applicacion/pdf", codventa + ".pdf");
+            string archivoImg = string.Empty;
+            var objConf = await _repository.Tabla.GetListTablaClinicaPorFiltros("EFACT_PARAMETROSWSTCI", "", 0, 0, 7);
+            foreach (var item in objConf.dataList)
+            {
+                if (item.codigo.Trim().Equals("TEMP")) archivoImg = item.nombre;
+            }
 
+            var objectGetById = await _repository.VentaCaja.GenerarPreVistaPrint(codventa, maquina, archivoImg, idusuario, orden);
+            var pdf = File(objectGetById.data.GetBuffer(), "applicacion/pdf", codventa + ".pdf");
             return pdf;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetVistaPrevia(string codComprobante)
-        {//clinica.dbo.Sp_Tablas_Consulta 'EFACT_PARAMETROSWSTCI','',0,0,7
-            //FileContentResult
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesDefaultResponseType]
+        public async Task<IActionResult> ComprobanteElectrValida(string codComprobante)
+        {
+
             try
             {
+                var objConf = await _repository.Tabla.GetTablasClinicaPorFiltros("EFACT_PARAMETROSWSTCI", "", 0, 0, 7);
+                if (objConf.data == null) throw new ArgumentException("NO EXISTE EN A CONFIGURACION -> EFACT_PARAMETROSWSTCI");
 
-                var objExiste = await _repository.VentaCaja.GetComprobanteElectroncioCodVenta(codComprobante, 0, 0, "", "", "", "", "", "", 9);
-                if (objExiste.data.codcomprobante == null) BadRequest("NO ES UN COMPROBANTE ELECTRONICO");
+                var objValida = await _repository.VentaCaja.GetComprobanteElectroncioVB("001", codComprobante, "", "L", "", 4);
+                if (objValida.data == null) throw new ArgumentException("EL COMPROBANTE NO ES ELECTRONICO / NO EXISTE.");
+                if (!objValida.data.flg_electronico.Equals("1")) throw new ArgumentException("EL COMPROBANTE NO ES ELECTRONICO.");
+                if (!objValida.data.obtener_pdf.Equals("S")) throw new ArgumentException("AUN NO PUEDE IMPRIMIR COMPROBANTE ELECTRONICO. " +
+                    " ESTADO CDR: " + objValida.data.nombreestado_cdr +
+                    " Se Otorgó?: " + objValida.data.nombreestado_otorgamiento);
 
+                var objExiste = _repository.VentaCaja.GetComprobanteElectroncioCodVenta(codComprobante, 0, 0, "", "", "", "", "", "", 1);
+                if (objExiste.Result.data == null) throw new ArgumentException("No se puede obtener el Código del Comprobante Electrónico.\n Tabla comprobantes_electronicos  Cod. Comprobante PK: " + codComprobante);
 
-                var objListConf = await _repository.Tabla.GetListTablaClinicaPorFiltros("EFACT_PARAMETROSWSTCI","",0,0,7);
-                string xRucEmisor, xRutaArchivoPDF, xUrlWebService;
-
-                foreach (var item in objListConf.dataList)
-                {
-                    if (item.codigo.Equals("RUC")) xRucEmisor = item.nombre;
-                    if (item.codigo.Equals("TEMP")) xRutaArchivoPDF = item.nombre;
-                    if (item.codigo.Equals("WS")) xUrlWebService = item.nombre;
-                }
-                
-                string xRutaArchivo = @"C:\temp\";
-                var resp = await _repository.VentaCaja.ObtenerCodigoBarraJPG(codComprobante, xRutaArchivo);
-
-                //var objCPE = await _repository.VentaCaja.GetComprobanteElectroncioCodVenta(codComprobantePK, 0, 0, "", "", "", "", "", "", 1);
-                if (resp.ResultadoCodigo == 0)
-                {
-                    if (resp.data == string.Empty)
-                    {
-
-                        if (codComprobante.Substring(0, 1).Equals("B") || codComprobante.Substring(0, 1).Equals("F")) { 
-                        
-                        
-                        }
-
-                        //If Mid(pCodcomprobante, 1, 1) = "B" Or Mid(pCodcomprobante, 1, 1) = "F" Then
-                        //    zImprime.ImpresionElectronicaLOG Trim(pCodcomprobante), pPictureBarrasHash, pPreview, pPictureViewComprobante
-                        //Else
-                        //    zImprime.ImpresionElectronicaLOG_Nota Trim(pCodcomprobante), pPictureBarrasHash, pPreview, pPictureViewComprobante
-                        //End If
-
-
-                        //'Eliminamos el archivo JPG obtenido
-                        //If xMensaje = "" Then
-                        //    Kill xRutaArchivo + pCodcomprobante + ".jpg"
-                        //End If
-
-                    }
-                    else {
-                        string mensaje = resp.data;
-                    }
-
-                    //xObtenerByte = objCPE.data.codigobarra;
-                    //if (xObtenerByte.Length == 0)
-                    //{
-
-                    //}
-                    //else
-                    //{
-                    //    //Crea el directorio por si no existe
-                    //    if (Directory.Exists(pRutaArchivoJPG) == false) Directory.CreateDirectory(pRutaArchivoJPG);
-                    //    xRuta = pRutaArchivoJPG + codComprobantePK + ".jpg";
-                    //    File.WriteAllBytes(xRuta, xObtenerByte); //Creamos el archivo 
-                    //}
-                }
-                else
-                {
-                    resp.ResultadoDescripcion = "El comprobante que esta intentado obtener no es electrónico./ No existe el comprobante.";
-                }
             }
             catch (Exception ex)
             {
-                return null;// BadRequest(ex);
+                return BadRequest(ex.Message);
             }
 
-            return null;
+            return Ok();
         }
 
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesDefaultResponseType]
+        public async Task<IActionResult> PreVistaValida(string codComprobante)
+        {
+
+            try
+            {
+                var objCPE = await _repository.VentaCaja.GetComprobanteElectroncioCodVenta(codComprobante, 0, 0, "", "", "", "", "", "", 1);
+                if (objCPE.data.codcomprobante == null) throw new ArgumentException("El comprobante que esta intentado obtener no es electrónico.");
+                if (objCPE.data.codigobarra.Length == 0) {
+
+                    ENPeticionInformacionComprobante modelo = new ENPeticionInformacionComprobante()
+                    {
+                        RucEmisor = objCPE.data.ruc_emisor,
+                        TipoComprobante = objCPE.data.tipo_comprobante,
+                        serie = objCPE.data.codcomprobantee.Substring(0,4),
+                        numero = Convert.ToInt32(objCPE.data.codcomprobantee.Substring(4)).ToString() ,
+                        CodigoHash = false,
+                        CodigoBarra=true
+                    };
+
+                    Byte[] xJpgArchivo = new Byte[0];
+
+                    string xRuta = string.Empty;
+                    string pRutaArchivoJPG = string.Empty;
+                    string xUrlWebService = string.Empty;
+
+                    var objConf = await _repository.Tabla.GetListTablaClinicaPorFiltros("EFACT_PARAMETROSWSTCI", "", 0, 0, 7);
+                    foreach (var item in objConf.dataList)
+                    {
+                        if (item.codigo.Trim().Equals("TEMP")) pRutaArchivoJPG = item.nombre;
+                        if (item.codigo.Trim().Equals("WS")) xUrlWebService = item.nombre;
+                    }
+
+                    var xUrlWS = new System.ServiceModel.EndpointAddress(xUrlWebService);
+                    var binding = new System.ServiceModel.BasicHttpBinding();
+                    WSComprobanteSoapClient client = new WSComprobanteSoapClient(binding, xUrlWS);
+                    string xRptaCadena = string.Empty;
+                    var result = client.ConsultarInformacionComprobante(modelo);
+                    if (result != null)
+                    {
+                        if (result.codigorespuesta.Equals("0"))
+                        {
+
+                            foreach (var item in result.respuesta)
+                            {
+                                xJpgArchivo = item.Codigobarra;
+                                xRuta = pRutaArchivoJPG + codComprobante + ".jpg";
+                                System.IO.File.WriteAllBytes(xRuta, xJpgArchivo);
+                            }
+
+                           var respUpd= await _repository.VentaCaja.ComprobanteElectronicoUpd("codigobarra","","", xJpgArchivo, codComprobante);
+                            if (respUpd.ResultadoCodigo == -1)
+                            {
+                                return BadRequest(respUpd);
+                            }
+                            else {
+                                return Ok(respUpd);
+                            }
+
+                        }
+                    }
+                    else {
+
+                        return BadRequest("TCI: Error al consultar el Web Service");
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            return Ok();
+        }
+
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesDefaultResponseType]
+        public async Task<FileContentResult> ComprobanteElectronicoPrint(string codComprobante)
+        {
+
+           
+            string xRucEmisor = string.Empty, xUrlWebService = string.Empty;
+         
+            var objConf = await _repository.Tabla.GetListTablaClinicaPorFiltros("EFACT_PARAMETROSWSTCI", "", 0, 0, 7);
+            foreach (var item in objConf.dataList)
+            {
+                if (item.codigo.Trim().Equals("RUC")) xRucEmisor = item.nombre;
+                if (item.codigo.Trim().Equals("WS")) xUrlWebService = item.nombre;
+            }
+
+            var objExiste = await _repository.VentaCaja.GetComprobanteElectroncioCodVenta(codComprobante, 0, 0, "", "", "", "", "", "", 1);
+
+            var xUrlWS = new System.ServiceModel.EndpointAddress(xUrlWebService);
+            var binding = new System.ServiceModel.BasicHttpBinding();
+            WSComprobanteSoapClient client = new WSComprobanteSoapClient(binding, xUrlWS);
+
+            ENPeticion modelo = new ENPeticion() {
+                IndicadorComprobante = 1,
+                Ruc = xRucEmisor,
+                Serie = codComprobante.Substring(0,4),
+                Numero = Convert.ToInt32(codComprobante.ToString().Substring(4)).ToString(),
+                TipoComprobante = objExiste.data.tipo_comprobante
+            };
+
+            string xRptaCadena = string.Empty;
+            var result = client.Obtener_PDF(modelo, ref xRptaCadena);
+            var pdf = File(result.ArchivoPDF, "applicacion/pdf", codComprobante + ".pdf");
+            return pdf;
+
+        }
+
+       
     }
 }

@@ -16,8 +16,15 @@ namespace Net.Business.Entities
         public string tipo_comprobante { get; set; }
         public string codcomprobantee { get; set; }
         public StringBuilder xml_registro { get; set; }
-
-
+        //extra
+        public int nro_fila { get; set; }
+        public string flg_electronico { get; set; }
+        public string obtener_pdf { get; set; }
+        public string nombreestado_cdr { get; set; }
+        public string nombreestado_otorgamiento { get; set; }
+        public string mensaje { get; set; }
+        public string ruc_emisor { get; set; }
+        public string url_webservices { get; set; }
 
     }
 

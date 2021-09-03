@@ -15,13 +15,15 @@ using Net.CrossCotting;
 using System.IO;
 using iTextSharp.text;
 using iTextSharp.text.pdf;
-using System.Collections.ObjectModel;
+//using System.Collections.ObjectModel;
+//using Microsoft.Web.Services3.Messaging;
 //using CSFDLLEFACT.WsTci;
 
 namespace Net.Data
 {
     public class VentaCajaRepository : RepositoryBase<BE_VentasCabecera>, IVentaCajaRepository
     {
+        private readonly string _urlLogo;
         private readonly string _cnx;
         private readonly string _cnxClinica;
         private readonly IConfiguration _configuration;
@@ -44,13 +46,16 @@ namespace Net.Data
         const string SP_GET_DATOCARDCODE_CONSULTAR = DB_ESQUEMA + "VEN_DatoCardCode_Consulta";
         //const string SP_GET_COMPROBANTE_UPDATE_PERSO = DB_ESQUEMA + "Sp_Comprobantes_Update";
         const string SP_POST_COMPROBANTE_VAL_UPDATE = DB_ESQUEMA + "VEN_ComprobantesValUpd";
+        const string SP_POST_CLINICA_COMPROBANTE_UPDATE = DB_ESQUEMA + "VEN_ClinicaComprobantesElectronicos_Upd";
         const string SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_TK = DB_ESQUEMA + "VEN_ComprobantesElectronicos_Consulta";
+        const string SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_VB = DB_ESQUEMA + "VEN_ComprobantesElectronicos_ConsultaVB";
         const string SP_POST_COMPROBANTE_ELECTRONICO_LOG_XML_CAB_PRINT = DB_ESQUEMA + "VEN_ComprobantesElectronicosLOG_XML_Cab_Print";
 
         
         public VentaCajaRepository(IHttpClientFactory clientFactory, IConnectionSQL context, IConfiguration configuration)
             : base(context)
         {
+            _urlLogo = configuration["archivoImg:urlLogo"];
             _cnx = configuration.GetConnectionString("cnnSqlLogistica");
             _cnxClinica = configuration.GetConnectionString("cnnSqlClinica");
             _configuration = configuration;
@@ -143,6 +148,53 @@ namespace Net.Data
             return vResultadoTransaccion;
 
         }
+        public async Task<ResultadoTransaccion<BE_VentasCabecera>> ComprobanteElectronicoUpd(string campo,string nuevovalor,string xml, Byte[] codigobarrajpg,string codigo)
+        {
+            ResultadoTransaccion<BE_VentasCabecera> vResultadoTransaccion = new ResultadoTransaccion<BE_VentasCabecera>();
+            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
+
+            vResultadoTransaccion.NombreMetodo = _metodoName;
+            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_cnx))
+                {
+                    using (SqlCommand cmd = new SqlCommand(SP_POST_CLINICA_COMPROBANTE_UPDATE, conn))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@campo", campo));
+                        cmd.Parameters.Add(new SqlParameter("@nuevovalor", nuevovalor));
+                        cmd.Parameters.Add(new SqlParameter("@xml", xml));
+                        cmd.Parameters.Add(new SqlParameter("@codigobarrajpg", codigobarrajpg));
+                        cmd.Parameters.Add(new SqlParameter("@codigo", codigo));
+
+                        BE_VentasCabecera response = new BE_VentasCabecera();
+
+                        await conn.OpenAsync();
+
+                        await cmd.ExecuteNonQueryAsync();
+
+                        vResultadoTransaccion.IdRegistro = 0;
+                        vResultadoTransaccion.ResultadoCodigo = 0;
+                        vResultadoTransaccion.ResultadoDescripcion = string.Format("Registros Totales {0}", 1);
+                        vResultadoTransaccion.data = response;
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = "Error al actualizar el archivo en la Base de Datos. Posibles errores: 1.- Ya sea porque existe el archivo en la BD. 2.- No se encuentra registrado el comprobante en la BD por eso no puede actualizar. otros:"+ ex.Message.ToString();
+            }
+
+            return vResultadoTransaccion;
+
+        }
+
+
         public async Task<ResultadoTransaccion<string>> GetDatoCardCodeConsulta(string tipoCliente,string codCliente)
         {
             ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
@@ -370,31 +422,6 @@ namespace Net.Data
 
                         await conn.OpenAsync();
                         await cmd.ExecuteNonQueryAsync();
-
-                        //using (var reader = await cmd.ExecuteReaderAsync())
-                        //{
-                        //    while (await reader.ReadAsync())
-                        //    {
-                        //        response.seguradoraRuc = ((reader["@rucaseg"]) is DBNull) ? string.Empty : (string)reader["@rucaseg"];
-                        //        response.seguradoraNombre = ((reader["@nombreaseg"]) is DBNull) ? string.Empty : (string)reader["@nombreaseg"];
-                        //        response.seguradoraDireccion = ((reader["@direccionaseg"]) is DBNull) ? string.Empty : (string)reader["@direccionaseg"];
-                        //        response.seguradoraCorreo = ((reader["@correoaseg"]) is DBNull) ? string.Empty : (string)reader["@correoaseg"];
-                        //        response.seguradoraCardCode = ((reader["@cardcodeA"]) is DBNull) ? string.Empty : (string)reader["@cardcodeA"];
-
-                        //        response.contratanteRuc = ((reader["@ruccia"]) is DBNull) ? string.Empty : (string)reader["@ruccia"];
-                        //        response.contratanteNombre = ((reader["@nombrecia"]) is DBNull) ? string.Empty : (string)reader["@nombrecia"];
-                        //        response.contratanteDireccion = ((reader["@direccioncia"]) is DBNull) ? string.Empty : (string)reader["@direccioncia"];
-                        //        response.contratanteCorreo = ((reader["@correocia"]) is DBNull) ? string.Empty : (string)reader["@correocia"];
-                        //        response.contratanteCardCode = ((reader["@cardcodeC"]) is DBNull) ? string.Empty : (string)reader["@cardcodeC"];
-
-                        //        response.pacienteRuc = ((reader["@rucpac"]) is DBNull) ? string.Empty : (string)reader["@rucpac"];
-                        //        response.pacienteNombre = ((reader["@nombrepac"]) is DBNull) ? string.Empty : (string)reader["@nombrepac"];
-                        //        response.pacienteDireccion = ((reader["@direccionpac"]) is DBNull) ? string.Empty : (string)reader["@direccionpac"];
-                        //        response.pacienteCorreo = ((reader["@correopac"]) is DBNull) ? string.Empty : (string)reader["@correopac"];
-                        //        response.pacienteCardCode = ((reader["@cardcodeP"]) is DBNull) ? string.Empty : (string)reader["@cardcodeP"];
-
-                        //    }
-                        //}
 
                         response.seguradoraRuc = oParamRucaseg.Value.ToString().Trim();
                         response.seguradoraNombre = oParamNombreaseg.Value.ToString().Trim();
@@ -813,10 +840,6 @@ namespace Net.Data
             vResultadoTransaccion.NombreMetodo = _metodoName;
             vResultadoTransaccion.NombreAplicacion = _aplicacionName;
 
-          //string  xRutaArchivo = @"C:\temp\";
-          //  CSFDLLEFACT.ComprobanteDLL zCsfDLL = new CSFDLLEFACT.ComprobanteDLL();
-          //  var ObtenerCodigoBarraJPG = zCsfDLL.ObtenerCodigoBarraJPG(xRutaArchivo, xRutaArchivo);
-
             try
             {
                 using (SqlConnection conn = new SqlConnection(_cnx))
@@ -844,13 +867,15 @@ namespace Net.Data
                             while (await reader.ReadAsync())
                             {
                                 response.codcomprobante = ((reader["codcomprobante"]) is DBNull) ? string.Empty : reader["codcomprobante"].ToString().Trim();
+                                response.codcomprobantee = ((reader["codcomprobantee"]) is DBNull) ? string.Empty : reader["codcomprobantee"].ToString().Trim();
                                 response.tipo_otorgamiento = ((reader["tipo_otorgamiento"]) is DBNull) ? string.Empty : reader["tipo_otorgamiento"].ToString().Trim();
                                 response.estado_cdr = ((reader["estado_cdr"]) is DBNull) ? string.Empty : reader["estado_cdr"].ToString().Trim();
                                 response.flg_confirma = ((reader["flg_confirma"]) is DBNull) ? false : (bool)reader["flg_confirma"];
                                 response.codigobarra = ((reader["codigobarra"]) is DBNull) ? null :  (Byte[])reader["codigobarra"];
                                 response.fecha_registro_sis = ((reader["fecha_registro_sis"]) is DBNull) ? DateTime.MinValue : (DateTime)reader["fecha_registro_sis"];
                                 response.tipo_comprobante = ((reader["tipo_comprobante"]) is DBNull) ? string.Empty : reader["tipo_comprobante"].ToString().Trim();
-                                response.codcomprobantee = ((reader["codcomprobantee"]) is DBNull) ? string.Empty : reader["codcomprobantee"].ToString().Trim();
+                                response.ruc_emisor = ((reader["ruc_emisor"]) is DBNull) ? string.Empty : reader["ruc_emisor"].ToString().Trim();
+                                response.url_webservices = ((reader["url_webservices"]) is DBNull) ? string.Empty : reader["url_webservices"].ToString().Trim();
 
                             }
                         }
@@ -882,9 +907,6 @@ namespace Net.Data
             vResultadoTransaccion.NombreMetodo = _metodoName;
             vResultadoTransaccion.NombreAplicacion = _aplicacionName;
 
-            //string  xRutaArchivo = @"C:\temp\";
-            //  CSFDLLEFACT.ComprobanteDLL zCsfDLL = new CSFDLLEFACT.ComprobanteDLL();
-            //  var ObtenerCodigoBarraJPG = zCsfDLL.ObtenerCodigoBarraJPG(xRutaArchivo, xRutaArchivo);
 
             try
             {
@@ -1033,53 +1055,157 @@ namespace Net.Data
         }
 
 
+        public async Task<ResultadoTransaccion<BE_ComprobanteElectronico>> GetComprobanteElectroncioVB(
+           string codEmpresa, string codComprobantePK, string codComprobante_e, string codSistema, string tipoCompsunat, int orden)
+        {
+            ResultadoTransaccion<BE_ComprobanteElectronico> vResultadoTransaccion = new ResultadoTransaccion<BE_ComprobanteElectronico>();
+            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
+
+            vResultadoTransaccion.NombreMetodo = _metodoName;
+            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
+          
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(_cnx))
+                {
+                    using (SqlCommand cmd = new SqlCommand(SP_POST_COMPROBANTE_ELECTRONICO_POR_CODCOMPROBANTE_VB, conn))
+                    {
+                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                        cmd.Parameters.Add(new SqlParameter("@codempresa", codEmpresa));
+                        cmd.Parameters.Add(new SqlParameter("@codcomprobante", codComprobantePK));
+                        cmd.Parameters.Add(new SqlParameter("@codcomprobante_e", codComprobante_e));
+                        cmd.Parameters.Add(new SqlParameter("@codsistema", codSistema));
+                        cmd.Parameters.Add(new SqlParameter("@tipocomp_sunat", tipoCompsunat));
+                        cmd.Parameters.Add(new SqlParameter("@orden", orden));
+
+                        BE_ComprobanteElectronico response = new BE_ComprobanteElectronico();
+
+                        await conn.OpenAsync();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                response.flg_electronico = ((reader["flg_electronico"]) is DBNull) ? string.Empty : reader["flg_electronico"].ToString().Trim();
+                                response.obtener_pdf = ((reader["obtener_pdf"]) is DBNull) ? string.Empty : reader["obtener_pdf"].ToString().Trim();
+                                response.nombreestado_cdr = ((reader["nombreestado_cdr"]) is DBNull) ? string.Empty : reader["nombreestado_cdr"].ToString().Trim();
+                                response.nombreestado_otorgamiento = ((reader["nombreestado_otorgamiento"]) is DBNull) ? string.Empty : reader["nombreestado_otorgamiento"].ToString().Trim();
+                                response.mensaje = ((reader["mensaje"]) is DBNull) ? string.Empty : reader["mensaje"].ToString().Trim();
+                            }
+                        }
+
+                        vResultadoTransaccion.IdRegistro = 0;
+                        vResultadoTransaccion.ResultadoCodigo = 0;
+                        vResultadoTransaccion.ResultadoDescripcion = string.Format("Registros Totales {0}", 1);
+                        vResultadoTransaccion.data = response;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
+            }
+
+            return vResultadoTransaccion;
+
+        }
 
 
         #region Vista de Impresion
 
-        public async Task<ResultadoTransaccion<MemoryStream>> GenerarValeVentaPrint(string codcomprobante, string maquina, int idusuario, int orden)
+
+        public async Task<ResultadoTransaccion<MemoryStream>> GenerarPreVistaPrint(string codcomprobante, string maquina,string archivoImg, int idusuario, int orden)
         {
 
             ResultadoTransaccion<MemoryStream> vResultadoTransaccion = new ResultadoTransaccion<MemoryStream>();
             _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
-
             vResultadoTransaccion.NombreMetodo = _metodoName;
             vResultadoTransaccion.NombreAplicacion = _aplicacionName;
-            //https://www.tyrodeveloper.com/2012/01/ticket-pdf-en-c.html
+
+            string Numero = "{0:###,###,###,###.00;-###,###,###,###.00;0.00;0.00}";
+
+            if (maquina==null) {
+                vResultadoTransaccion.IdRegistro = -1;
+                vResultadoTransaccion.ResultadoCodigo = -1;
+                vResultadoTransaccion.ResultadoDescripcion = "el nombre de la maquina no puede ser nulo";
+                return vResultadoTransaccion;
+            }
 
             try
             {
 
+                string xRutaCodigoBarra = string.Empty;
+                
 
+
+                var objCPE = await GetComprobanteElectroncioCodVenta(codcomprobante, 0, 0, "", "", "", "", "", "", 1);
+                if (objCPE.data.codcomprobante !=null)
+                {
+                    var respCodigoBarra = objCPE.data.codigobarra;
+                    if (respCodigoBarra.Length == 0) { 
+                    
+                    }
+
+                    //Crea el directorio por si no existe
+                    if (Directory.Exists(archivoImg) == false) Directory.CreateDirectory(archivoImg);
+                    xRutaCodigoBarra = archivoImg + codcomprobante + ".jpg";
+                    File.WriteAllBytes(xRutaCodigoBarra, respCodigoBarra); //Creamos el archivo 
+                }
+                else {
+                    vResultadoTransaccion.IdRegistro = -1;
+                    vResultadoTransaccion.ResultadoCodigo = -1;
+                    vResultadoTransaccion.ResultadoDescripcion = "El comprobante que esta intentado obtener no es electrónico.";
+                    return vResultadoTransaccion;
+                }
 
                 ///////////////////////////////////////////////////////////
                 //zFarmacia2.Sp_ComprobantesElectronicos_ConsultaVB "001", pCodComprobantePK, "", "L", "", 4
                 var data = await this.GetComprobanteElectroncioLogXmlCab_print(codcomprobante, maquina, 1, 0);
-
                 if (data.dataList.Count() <= 0) throw new ArgumentException("NO SE ENCONTRO EL COMPROBANTE");
-
 
                 var cabecera = data.dataList.ToList()[0];
                 var Detalle = data.dataList.ToList();
+                int xTamanio = 400 * ((Detalle.Count()==1) ? 2: Detalle.Count());
 
+
+                decimal pC_MontoAfecto = cabecera.c_montoafecto;
+                decimal pC_MontoInafecto = cabecera.c_montoinafecto;
+                decimal pC_MontoGratuito = cabecera.c_montogratuito;
+                decimal pC_MontoIgv = cabecera.c_montoigv;
+                decimal pC_MontoNeto = cabecera.c_montoneto;
+                DateTime cfecha = cabecera.fechaemision;
+                string Moneda = cabecera.c_simbolomoneda;
+                string wResolucion = cabecera.efact_sunat_resol;
+                string pNombreEstado = cabecera.nombreestado;
+                string pTipoPagotxt = cabecera.tipopagotxt;
 
                 //////////////////////////////////////////////////////////
 
-                // add a image
-                //iTextSharp.text.Image jpg = iTextSharp.text.Image.GetInstance("/logotike.png");
-                //PdfPCell imageCell = new PdfPCell(jpg);
-                //imageCell.Colspan = 2; // either 1 if you need to insert one cell
-                //imageCell.Border = 0;
-                //imageCell.HorizontalAlignment(Element.ALIGN_CENTER);
-                //imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                //imageCell.set(Element.ALIGN_CENTER);
+                iTextSharp.text.Image jpg = iTextSharp.text.Image.GetInstance(_urlLogo);
+                jpg.WidthPercentage = 37;
+                jpg.Alignment = 1;
+                PdfPCell imageCell = new PdfPCell();
+                imageCell.AddElement(jpg);
+                imageCell.Border = 0;
+                imageCell.HorizontalAlignment = Element.ALIGN_CENTER;
+                imageCell.VerticalAlignment = Element.ALIGN_MIDDLE;
 
+                iTextSharp.text.Image imgCodigoBarra = iTextSharp.text.Image.GetInstance(xRutaCodigoBarra);
+                imgCodigoBarra.WidthPercentage = 60;
+                imgCodigoBarra.Alignment = 1;
+                PdfPCell imageCodigoBarraCell = new PdfPCell();
+                imageCodigoBarraCell.AddElement(imgCodigoBarra);
+                imageCodigoBarraCell.Border = 0;
+                imageCodigoBarraCell.HorizontalAlignment = Element.ALIGN_CENTER;
+                imageCodigoBarraCell.VerticalAlignment = Element.ALIGN_MIDDLE;
 
-                //Rectangle pagesize = new Rectangle(360f, 14400f);
-                var pgSize = new iTextSharp.text.Rectangle(360f, 14100);
+                //Rectangle pagesize = new Rectangle(360f, 14400f);14100
+                var pgSize = new iTextSharp.text.Rectangle(360f, xTamanio);
                 Document doc = new Document(pgSize);
                 // points to cm
-                doc.SetMargins(20f, 20f, 15f, 15f);
+                doc.SetMargins(20f, 20f, 15f, 2f);
                 MemoryStream ms = new MemoryStream();
                 PdfWriter write = PdfWriter.GetInstance(doc, ms);
                 doc.AddAuthor("Grupo SBA");
@@ -1088,39 +1214,74 @@ namespace Net.Data
                 write.PageEvent = pe;
                 // Colocamos la fuente que deseamos que tenga el documento
                 BaseFont helvetica = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1250, true);
+                BaseFont curier = BaseFont.CreateFont(BaseFont.COURIER, BaseFont.CP1250, true);
+
                 // Titulo
-                iTextSharp.text.Font titulo = new iTextSharp.text.Font(helvetica, 14f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font subTitulo = new iTextSharp.text.Font(helvetica, 12f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font parrafoNegroNegrita = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font parrafoNegro = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.NORMAL, BaseColor.Black);
+                Font Header1= new iTextSharp.text.Font(helvetica, 8, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font Header2 = new iTextSharp.text.Font(curier, 10, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font subTitulo = new iTextSharp.text.Font(helvetica, 12f, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font parrafoNegroNegrita = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font subHeader3 = new iTextSharp.text.Font(helvetica, 8, iTextSharp.text.Font.BOLD, BaseColor.Black);
+                Font subHeader4 = new iTextSharp.text.Font(helvetica, 8, iTextSharp.text.Font.NORMAL, BaseColor.Black);
+                Font parrafoNegro = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.NORMAL, BaseColor.Black);
+                Font parrafoItemDetalle = new iTextSharp.text.Font(helvetica, 8f, iTextSharp.text.Font.NORMAL, BaseColor.Black);
+
                 pe.HeaderLeft = " ";
                 pe.HeaderFont = parrafoNegroNegrita;
                 pe.HeaderRight = " ";
 
                 doc.Open();
 
-                var tbl = new PdfPTable(new float[] { 30f, 40f, 30f }) { WidthPercentage = 100 };
+                //30f, 40f, 30f
+                var tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                tbl.AddCell(imageCell);
 
-                var title = string.Format("VENTAS Nro {0}", codcomprobante, titulo);
-
-                var c1 = new PdfPCell(new Phrase("CLINICA SAN FELIPE S.A.", parrafoNegro)) { Border = 0 };
-                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                var c1 = new PdfPCell(new Phrase("CLINICA SAN FELIPE S.A.", new Font(helvetica, 9, Font.BOLD, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
                 c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-
                 tbl.AddCell(c1);
-
-                //c1 = new PdfPCell(new Phrase(title, titulo)) { Border = 0 };
-                //c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                //c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-                //tbl.AddCell(c1);
-
-                //c1 = new PdfPCell(new Phrase(DateTime.Now.ToString(), parrafoNegro)) { Border = 0 };
-                //c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-                //c1.HorizontalAlignment = Element.ALIGN_RIGHT;
-                //tbl.AddCell(c1);
                 doc.Add(tbl);
 
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase("Av. Gregorio Escobedo 650, Jesús María, Lima - Lima", subHeader4)) { Border = 0 };
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+                doc.Add(tbl);
+
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase("Teléfono: (01) 219-0000 RUC: 20100162742\n\n", subHeader4)) { Border = 0 };
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+                doc.Add(tbl);
+                //doc.Add(new Phrase(" "));
+
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase("BOLETA DE VENTA ELECTRONICA", Header1)) { Border = 0 };
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+                doc.Add(tbl);
+
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase(cabecera.codcomprobante_e+ "\n\n", Header1)) { Border = 0 };
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+                doc.Add(tbl);
+                //doc.Add(new Phrase(" "));
+
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase("ATENCION:", Header2)) { Border = 0 };
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+                doc.Add(tbl);
                 doc.Add(new Phrase(" "));
+
+
                 //Obtenemos los datos de la venta
 
                 ResultadoTransaccion<BE_VentasCabecera> resultadoTransaccionVenta = await GetVentaPorCodVenta("05563376");
@@ -1134,204 +1295,320 @@ namespace Net.Data
                     return vResultadoTransaccion;
                 }
 
-                // Generamos la Cabecera del vale de venta
-                tbl = new PdfPTable(new float[] { 12f, 45f, 3f, 12f, 28f }) { WidthPercentage = 100 };
+                // Generamos la Cabecera
+                tbl = new PdfPTable(new float[] { 15f,85f }) { WidthPercentage = 100 };
                 //Linea 1
-                c1 = new PdfPCell(new Phrase("Nombre", parrafoNegroNegrita)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase("Nombre", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombre), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Plan", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.porcentajedctoplan.ToString()), parrafoNegro)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": "+cabecera.anombrede.Trim(), subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
-                //Linea 2
-                c1 = new PdfPCell(new Phrase("Atención", parrafoNegroNegrita)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase("Dirección", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.codatencion), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Aseguradora", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombreaseguradora), parrafoNegro)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.direccion.Trim(), subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
-                //Linea 3
-                c1 = new PdfPCell(new Phrase("H. Cliníca", parrafoNegroNegrita)) { Border = 0 };
+                if (cabecera.tipocomp_sunat.Equals("03"))
+                {
+                    string etiquetaDoc = string.Empty;
+                    switch (cabecera.tipdocidentidad_sunat)
+                    {
+                        case "0":
+                            etiquetaDoc = "No Dom.";
+                            break;
+                        case "1":
+                            etiquetaDoc = "DNI";
+                            break;
+                        case "4":
+                            etiquetaDoc = "Carnet Ext.";
+                            break;
+                        case "7":
+                            etiquetaDoc = "Pasaporte";
+                            break;
+                    }
+
+                    c1 = new PdfPCell(new Phrase(etiquetaDoc, subHeader3)) { Border = 0 };
+                    tbl.AddCell(c1);
+                    c1 = new PdfPCell(new Phrase(": " + cabecera.ruc_sunat.Trim(), subHeader3)) { Border = 0 };
+                    tbl.AddCell(c1);
+                }
+                else {
+                    c1 = new PdfPCell(new Phrase("RUC", subHeader3)) { Border = 0 };
+                    tbl.AddCell(c1);
+                    c1 = new PdfPCell(new Phrase(": " + cabecera.ruc_sunat.Trim(), subHeader3)) { Border = 0 };
+                    tbl.AddCell(c1);
+                }
+
+                c1 = new PdfPCell(new Phrase("F. Emisión", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.codpaciente), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Coaseguro", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.porcentajecoaseguro.ToString()), parrafoNegro)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.fechaemision.ToShortTimeString(), subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
-                //Linea 4
-                c1 = new PdfPCell(new Phrase("Médico", parrafoNegroNegrita)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase("H. Clinica", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombremedico), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Cama", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.cama), parrafoNegro)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.codpaciente, subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
-                //Linea 5
-                c1 = new PdfPCell(new Phrase("Observación", parrafoNegroNegrita)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase("Venta", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.observacion), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("F.Emisión", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.fechaemision.ToString()), parrafoNegro)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.codventa, subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
 
-                //Linea 6
-                c1 = new PdfPCell(new Phrase("", parrafoNegroNegrita)) { Border = 0 };
-                c1.Colspan = 3;
+                c1 = new PdfPCell(new Phrase("Paciente", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Paquete", parrafoNegroNegrita)) { Border = 0 };
+                c1 = new PdfPCell(new Phrase(": " + cabecera.nombrepaciente, subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", ""), parrafoNegro)) { Border = 0 };
+
+                c1 = new PdfPCell(new Phrase("Coaseguro", subHeader3)) { Border = 0 };
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(": " + Convert.ToString(cabecera.porcentajecoaseguro), subHeader3)) { Border = 0 };
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Moneda", subHeader3)) { Border = 0 };
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(": " + cabecera.c_nombremoneda, subHeader3)) { Border = 0 };
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("\n\n", subHeader3)) { Border = 0 };
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("\n\n", subHeader3)) { Border = 0 };
                 tbl.AddCell(c1);
                 doc.Add(tbl);
 
-                doc.Add(new Phrase(" "));
-
-                // Generamos el detalle del vale de venta
-                tbl = new PdfPTable(new float[] { 30f, 15f, 8f, 8f, 8f, 8f, 8f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("Producto", parrafoNegroNegrita));
+                // Generamos el detalle
+                tbl = new PdfPTable(new float[] { 30f, 8f, 8f, 8f, 8f }) { WidthPercentage = 100 };
+                c1 = new PdfPCell(new Phrase("Prod.", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
                 c1.BorderWidth = 1;
                 c1.DisableBorderSide(Rectangle.LEFT_BORDER);
                 c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
                 c1.DisableBorderSide(Rectangle.TOP_BORDER);
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Lab.", parrafoNegroNegrita));
+                c1 = new PdfPCell(new Phrase("Cant.", subHeader4));
                 c1.BorderWidth = 1;
                 c1.DisableBorderSide(Rectangle.LEFT_BORDER);
                 c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
                 c1.DisableBorderSide(Rectangle.TOP_BORDER);
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("P.Unit", parrafoNegroNegrita));
+                c1 = new PdfPCell(new Phrase("PUni.", subHeader4));
                 c1.BorderWidth = 1;
                 c1.DisableBorderSide(Rectangle.LEFT_BORDER);
                 c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
                 c1.DisableBorderSide(Rectangle.TOP_BORDER);
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Cant.", parrafoNegroNegrita));
+                c1 = new PdfPCell(new Phrase("Desc.", subHeader4));
                 c1.BorderWidth = 1;
                 c1.DisableBorderSide(Rectangle.LEFT_BORDER);
                 c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
                 c1.DisableBorderSide(Rectangle.TOP_BORDER);
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("D.Prod.", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("D.Plan", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Valor", parrafoNegroNegrita));
+                c1 = new PdfPCell(new Phrase("PVen.", subHeader4));
                 c1.BorderWidth = 1;
                 c1.DisableBorderSide(Rectangle.LEFT_BORDER);
                 c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
                 c1.DisableBorderSide(Rectangle.TOP_BORDER);
                 tbl.AddCell(c1);
 
-                foreach (BE_VentasDetalle item in resultadoTransaccionVenta.data.listaVentaDetalle)
+                foreach (var item in Detalle)
                 {
-                    c1 = new PdfPCell(new Phrase(item.nombreproducto, parrafoNegro)) { Border = 0 };
+                    c1 = new PdfPCell(new Phrase(item.nombreproducto.Trim(), parrafoItemDetalle)) { Border = 0 };
                     tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
+                    c1 = new PdfPCell(new Phrase(string.Format("{0:#0.0000}", item.d_cant_sunat), parrafoItemDetalle)) { Border = 0 };
                     tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.preciounidadcondcto.ToString(), parrafoNegro)) { Border = 0 };
+                    c1 = new PdfPCell(new Phrase(string.Format("{0:#0.00}", item.d_ventaunitario_conigv), parrafoItemDetalle)) { Border = 0 };
                     tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.cantidad.ToString(), parrafoNegro)) { Border = 0 };
+                    c1 = new PdfPCell(new Phrase(string.Format("{0:#0.00}", item.d_dscto_conigv), parrafoItemDetalle)) { Border = 0 };
                     tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.porcentajedctoproducto.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.porcentajedctoplan.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.montototal.ToString(), parrafoNegro)) { Border = 0 };
+                    c1 = new PdfPCell(new Phrase(string.Format("{0:#0.00}", item.d_total_conigv), parrafoItemDetalle)) { Border = 0 };
                     tbl.AddCell(c1);
                 }
                 doc.Add(tbl);
 
-                doc.Add(new Phrase(" "));
-                doc.Add(new Phrase(" "));
-                // Totales
-                tbl = new PdfPTable(new float[] { 70f, 15f, 15f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("NO INCLUYE IGV", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Total :", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(resultadoTransaccionVenta.data.montototal.ToString(), parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(resultadoTransaccionVenta.data.usuario, parrafoNegroNegrita)) { Border = 0 };
+                
+                tbl = new PdfPTable(new float[] { 46f, 8f, 8f }) { WidthPercentage = 100 };
+
+                c1 = new PdfPCell(new Phrase("\n\n", subHeader4));
                 c1.Colspan = 3;
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+
+                // Totales
+                c1 = new PdfPCell(new Phrase("Op. Gravada:", subHeader4));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("S/.", subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(string.Format(Numero, pC_MontoAfecto), subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("Op. Inafectas:", subHeader4));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("S/.", subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(string.Format(Numero, pC_MontoInafecto), subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("Op. Gratuitas:", subHeader4));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("S/.", subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(string.Format(Numero, pC_MontoGratuito), subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("I.G.V:", subHeader4));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("S/.", subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(string.Format(Numero, pC_MontoIgv), subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("Importe Total:", subHeader4));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase("S/.", subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+                c1 = new PdfPCell(new Phrase(string.Format(Numero, pC_MontoNeto), subHeader4));
+                c1.Border = 0;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("\n\n")) { Border = 0 };
+                c1.Colspan = 4;
+                tbl.AddCell(c1);
+                
+                doc.Add(tbl);
+
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                tbl.AddCell(imageCodigoBarraCell);
+                c1 = new PdfPCell(new Phrase("\n\n"));
+                c1.Border = 0;
                 tbl.AddCell(c1);
                 doc.Add(tbl);
 
-                doc.Add(new Phrase(" "));
-                doc.Add(new Phrase(" "));
+                if (cabecera.flg_gratuito.Equals("1"))
+                {
+                    tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+                    c1 = new PdfPCell(new Phrase("TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE", new Font(Font.HELVETICA, 7f, Font.NORMAL, BaseColor.Black)));
+                    c1.Border = 0;
+                    c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                    c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                    tbl.AddCell(c1);
+                    doc.Add(tbl);
+                    doc.Add(new Phrase(" "));
+                }
 
-                tbl = new PdfPTable(new float[] { 25f, 25f, 25f, 25f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("Vendedor", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
+                tbl = new PdfPTable(new float[] { 30f }) { WidthPercentage = 100 };
+
+                c1 = new PdfPCell(new Phrase("Autorizado mediante", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Personal de Reparto", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
+
+                c1 = new PdfPCell(new Phrase("Resolución Nro: "+ wResolucion + " / SUNAT", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Personal Recepciona", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
+
+                c1 = new PdfPCell(new Phrase("www.clinicasanfelipe.com", new Font(Font.HELVETICA, 8f, Font.BOLD, BaseColor.Black)));
+                c1.Border = 0;
                 c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Paciente", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
+
+                c1 = new PdfPCell(new Phrase("Estimado Cliente:", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Antes de retirarse por favor verifique su compra,", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("no se aceptarán cambios ni devoluciones.", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
                 c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Una vez emitido el comprobante, no se aceptará el cambio", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("por otro tipo de comprobante (factura/boleta) ni por cambio", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("de nombre o razón social.", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_CENTER;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Fecha de Emisión: " + cfecha.ToShortDateString()+ " Hora: "+ cfecha.ToShortTimeString(), new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Estado: "+ pNombreEstado, new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase("Tipo de pago:", new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
+                tbl.AddCell(c1);
+
+                c1 = new PdfPCell(new Phrase(pTipoPagotxt, new Font(Font.HELVETICA, 8f, Font.NORMAL, BaseColor.Black)));
+                c1.Border = 0;
+                c1.HorizontalAlignment = Element.ALIGN_LEFT;
+                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
                 tbl.AddCell(c1);
                 doc.Add(tbl);
+                doc.Add(new Phrase(" "));
 
                 write.Close();
                 doc.Close();
@@ -1349,324 +1626,11 @@ namespace Net.Data
                 vResultadoTransaccion.ResultadoCodigo = -1;
                 vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
             }
+
             return vResultadoTransaccion;
+
         }
 
-
-        public async Task<ResultadoTransaccion<MemoryStream>> GenerarValeVentaPrint1(string codcomprobante,string maquina,int idusuario, int orden)
-        {
-
-            ResultadoTransaccion<MemoryStream> vResultadoTransaccion = new ResultadoTransaccion<MemoryStream>();
-            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
-
-            vResultadoTransaccion.NombreMetodo = _metodoName;
-            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
-
-
-            try
-            {
-
-
-
-                ///////////////////////////////////////////////////////////
-                //zFarmacia2.Sp_ComprobantesElectronicos_ConsultaVB "001", pCodComprobantePK, "", "L", "", 4
-                var data= await  this.GetComprobanteElectroncioLogXmlCab_print(codcomprobante, maquina, 1,0);
-
-                if (data.dataList.Count() <= 0) throw new ArgumentException("NO SE ENCONTRO EL COMPROBANTE");
-
-
-                var cabecera = data.dataList.ToList()[0];
-                var Detalle = data.dataList.ToList();
-
-
-                //////////////////////////////////////////////////////////
-
-                // add a image
-                //iTextSharp.text.Image jpg = iTextSharp.text.Image.GetInstance("/logotike.png");
-                //PdfPCell imageCell = new PdfPCell(jpg);
-                //imageCell.Colspan = 2; // either 1 if you need to insert one cell
-                //imageCell.Border = 0;
-                //imageCell.HorizontalAlignment(Element.ALIGN_CENTER);
-                //imageCell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                //imageCell.set(Element.ALIGN_CENTER);
-
-
-                //Rectangle pagesize = new Rectangle(360f, 14400f);
-                var pgSize = new iTextSharp.text.Rectangle(360f, 14100);
-                Document doc = new Document(pgSize);
-                // points to cm
-                doc.SetMargins(20f, 20f, 15f, 15f);
-                MemoryStream ms = new MemoryStream();
-                PdfWriter write = PdfWriter.GetInstance(doc, ms);
-                doc.AddAuthor("Grupo SBA");
-                doc.AddTitle("Cliníca San Felipe");
-                var pe = new PageEventHelper();
-                write.PageEvent = pe;
-                // Colocamos la fuente que deseamos que tenga el documento
-                BaseFont helvetica = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1250, true);
-                // Titulo
-                iTextSharp.text.Font titulo = new iTextSharp.text.Font(helvetica, 14f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font subTitulo = new iTextSharp.text.Font(helvetica, 12f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font parrafoNegroNegrita = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.BOLD, BaseColor.Black);
-                iTextSharp.text.Font parrafoNegro = new iTextSharp.text.Font(helvetica, 10f, iTextSharp.text.Font.NORMAL, BaseColor.Black);
-                pe.HeaderLeft = " ";
-                pe.HeaderFont = parrafoNegroNegrita;
-                pe.HeaderRight = " ";
-                
-                doc.Open();
-
-                var tbl = new PdfPTable(new float[] { 30f, 40f, 30f }) { WidthPercentage = 100 };
-
-                var title = string.Format("VENTAS Nro {0}", codcomprobante, titulo);
-
-                var c1 = new PdfPCell(new Phrase("CLINICA SAN FELIPE S.A.", parrafoNegro)) { Border = 0 };
-                c1.HorizontalAlignment = Element.ALIGN_RIGHT;
-                c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-                
-                tbl.AddCell(c1);
-
-                //c1 = new PdfPCell(new Phrase(title, titulo)) { Border = 0 };
-                //c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                //c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-                //tbl.AddCell(c1);
-
-                //c1 = new PdfPCell(new Phrase(DateTime.Now.ToString(), parrafoNegro)) { Border = 0 };
-                //c1.VerticalAlignment = Element.ALIGN_MIDDLE;
-                //c1.HorizontalAlignment = Element.ALIGN_RIGHT;
-                //tbl.AddCell(c1);
-                doc.Add(tbl);
-
-                doc.Add(new Phrase(" "));
-                //Obtenemos los datos de la venta
-
-                ResultadoTransaccion<BE_VentasCabecera> resultadoTransaccionVenta = await GetVentaPorCodVenta("05563376");
-
-                if (resultadoTransaccionVenta.ResultadoCodigo == -1)
-                {
-                    vResultadoTransaccion.IdRegistro = -1;
-                    vResultadoTransaccion.ResultadoCodigo = -1;
-                    vResultadoTransaccion.ResultadoDescripcion = resultadoTransaccionVenta.ResultadoDescripcion;
-
-                    return vResultadoTransaccion;
-                }
-
-                // Generamos la Cabecera del vale de venta
-                tbl = new PdfPTable(new float[] { 12f, 45f, 3f, 12f, 28f }) { WidthPercentage = 100 };
-                //Linea 1
-                c1 = new PdfPCell(new Phrase("Nombre", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombre), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Plan", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.porcentajedctoplan.ToString()), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-
-                //Linea 2
-                c1 = new PdfPCell(new Phrase("Atención", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.codatencion), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Aseguradora", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombreaseguradora), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-
-                //Linea 3
-                c1 = new PdfPCell(new Phrase("H. Cliníca", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.codpaciente), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Coaseguro", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.porcentajecoaseguro.ToString()), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-
-                //Linea 4
-                c1 = new PdfPCell(new Phrase("Médico", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.nombremedico), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Cama", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.cama), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-
-                //Linea 5
-                c1 = new PdfPCell(new Phrase("Observación", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.observacion), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("F.Emisión", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", resultadoTransaccionVenta.data.fechaemision.ToString()), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-
-                //Linea 6
-                c1 = new PdfPCell(new Phrase("", parrafoNegroNegrita)) { Border = 0 };
-                c1.Colspan = 3;
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Paquete", parrafoNegroNegrita)) { Border = 0 };
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(string.Format(": {0}", ""), parrafoNegro)) { Border = 0 };
-                tbl.AddCell(c1);
-                doc.Add(tbl);
-
-                doc.Add(new Phrase(" "));
-
-                // Generamos el detalle del vale de venta
-                tbl = new PdfPTable(new float[] { 30f, 15f, 8f, 8f, 8f, 8f, 8f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("Producto", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Lab.", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("P.Unit", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Cant.", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("D.Prod.", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("D.Plan", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Valor", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.TOP_BORDER);
-                tbl.AddCell(c1);
-
-                foreach (BE_VentasDetalle item in resultadoTransaccionVenta.data.listaVentaDetalle)
-                {
-                    c1 = new PdfPCell(new Phrase(item.nombreproducto, parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase("", parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.preciounidadcondcto.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.cantidad.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.porcentajedctoproducto.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.porcentajedctoplan.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                    c1 = new PdfPCell(new Phrase(item.montototal.ToString(), parrafoNegro)) { Border = 0 };
-                    tbl.AddCell(c1);
-                }
-                doc.Add(tbl);
-
-                doc.Add(new Phrase(" "));
-                doc.Add(new Phrase(" "));
-                // Totales
-                tbl = new PdfPTable(new float[] { 70f, 15f, 15f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("NO INCLUYE IGV", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Total :", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(resultadoTransaccionVenta.data.montototal.ToString(), parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase(resultadoTransaccionVenta.data.usuario, parrafoNegroNegrita)) { Border = 0 };
-                c1.Colspan = 3;
-                tbl.AddCell(c1);
-                doc.Add(tbl);
-
-                doc.Add(new Phrase(" "));
-                doc.Add(new Phrase(" "));
-
-                tbl = new PdfPTable(new float[] { 25f, 25f, 25f, 25f }) { WidthPercentage = 100 };
-                c1 = new PdfPCell(new Phrase("Vendedor", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Personal de Reparto", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Personal Recepciona", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                c1 = new PdfPCell(new Phrase("Paciente", parrafoNegroNegrita));
-                c1.BorderWidth = 1;
-                c1.HorizontalAlignment = Element.ALIGN_CENTER;
-                c1.DisableBorderSide(Rectangle.LEFT_BORDER);
-                c1.DisableBorderSide(Rectangle.RIGHT_BORDER);
-                c1.DisableBorderSide(Rectangle.BOTTOM_BORDER);
-                tbl.AddCell(c1);
-                doc.Add(tbl);
-
-                write.Close();
-                doc.Close();
-                ms.Seek(0, SeekOrigin.Begin);
-                var file = ms;
-
-                vResultadoTransaccion.IdRegistro = 0;
-                vResultadoTransaccion.ResultadoCodigo = 0;
-                vResultadoTransaccion.ResultadoDescripcion = "Se genero correctamente Vale de Venta";
-                vResultadoTransaccion.data = file;
-            }
-            catch (Exception ex)
-            {
-                vResultadoTransaccion.IdRegistro = -1;
-                vResultadoTransaccion.ResultadoCodigo = -1;
-                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
-            }
-            return vResultadoTransaccion;
-        }
         public async Task<ResultadoTransaccion<BE_VentasCabecera>> GetVentaPorCodVenta(string codventa)
         {
             ResultadoTransaccion<BE_VentasCabecera> vResultadoTransaccion = new ResultadoTransaccion<BE_VentasCabecera>();
@@ -1812,147 +1776,7 @@ namespace Net.Data
 
         }
 
-        //SP_GET_CORRELATIVO_CONSULTA
         #endregion
-
-        #region Validaciones
-        //EFACT_FLAG_GENERAFACTURA
-        public async Task<ResultadoTransaccion<BE_VentasCabecera>> GetFlagGenerarFactura(string codVenta)
-        {
-            ResultadoTransaccion<BE_VentasCabecera> vResultadoTransaccion = new ResultadoTransaccion<BE_VentasCabecera>();
-            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
-
-            vResultadoTransaccion.NombreMetodo = _metodoName;
-            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
-
-            try
-            {
-                using (SqlConnection conn = new SqlConnection(_cnx))
-                {
-                    using (SqlCommand cmd = new SqlCommand(SP_GET_VENTA_CABECERA_BY_CODVENTA, conn))
-                    {
-                        cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                        cmd.Parameters.Add(new SqlParameter("@codigo", codVenta)); //codventa
-
-                        BE_VentasCabecera response = new BE_VentasCabecera();
-
-                        await conn.OpenAsync();
-
-                        using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            while (await reader.ReadAsync())
-                            {
-                                response.fechagenera = ((reader["fechagenera"]) is DBNull) ? DateTime.MinValue : (DateTime)reader["fechagenera"];
-                                response.fechaemision = ((reader["fechaemision"]) is DBNull) ? DateTime.MinValue : (DateTime)reader["fechaemision"];
-                                response.codcomprobante = ((reader["codcomprobante"]) is DBNull) ? string.Empty : reader["codcomprobante"].ToString().Trim();
-                                response.planpoliza = ((reader["planpoliza"]) is DBNull) ? string.Empty : reader["planpoliza"].ToString().Trim();
-                                response.codaseguradora = ((reader["codaseguradora"]) is DBNull) ? string.Empty : reader["codaseguradora"].ToString().Trim();
-                                response.codcia = ((reader["codcia"]) is DBNull) ? string.Empty : reader["codcia"].ToString().Trim();
-                                response.codventa = ((reader["codventa"]) is DBNull) ? string.Empty : reader["codventa"].ToString().Trim();
-                                response.estado = ((reader["estado"]) is DBNull) ? string.Empty : reader["estado"].ToString().Trim();
-                                response.cardcode = ((reader["cardcode"]) is DBNull) ? string.Empty : reader["cardcode"].ToString().Trim();
-                                response.codcliente = ((reader["codcliente"]) is DBNull) ? string.Empty : reader["codcliente"].ToString().Trim();
-                                response.codpaciente = ((reader["codpaciente"]) is DBNull) ? string.Empty : reader["codpaciente"].ToString().Trim();
-                                response.nombre = ((reader["nombre"]) is DBNull) ? string.Empty : reader["nombre"].ToString().Trim();
-                                response.codplan = ((reader["codplan"]) is DBNull) ? string.Empty : reader["codplan"].ToString().Trim();
-                                response.porcentajedctoplan = ((reader["porcentajedctoplan"]) is DBNull) ? 0 : (decimal)reader["porcentajedctoplan"];
-                                response.codtipocliente = ((reader["codtipocliente"]) is DBNull) ? string.Empty : reader["codtipocliente"].ToString().Trim();
-                                response.porcentajecoaseguro = ((reader["porcentajecoaseguro"]) is DBNull) ? 0 : (decimal)reader["porcentajecoaseguro"];
-                                response.porcentajeimpuesto = ((reader["porcentajeimpuesto"]) is DBNull) ? 0 : (decimal)reader["porcentajeimpuesto"];
-                                response.montopaciente = ((reader["montopaciente"]) is DBNull) ? 0 : (decimal)reader["montopaciente"];
-                                response.montoaseguradora = ((reader["montoaseguradora"]) is DBNull) ? 0 : (decimal)reader["montoaseguradora"];
-
-                                response.fechaemision = ((reader["fechaemision"]) is DBNull) ? DateTime.MinValue : (DateTime)reader["fechaemision"];
-
-                                response.nombreestado = ((reader["nombreestado"]) is DBNull) ? string.Empty : reader["nombreestado"].ToString().Trim();
-                                response.nombretipocliente = ((reader["nombretipocliente"]) is DBNull) ? string.Empty : reader["nombretipocliente"].ToString().Trim();
-                                //response.nombrealmacen = ((reader["nombrealmacen"]) is DBNull) ? string.Empty : (string)reader["nombrealmacen"];
-                                response.nombreplan = ((reader["nombreplan"]) is DBNull) ? string.Empty : reader["nombreplan"].ToString().Trim();
-                                //response.tienedevolucion = ((reader["tienedevolucion"]) is DBNull) ? false : (bool)reader["tienedevolucion"];
-                                response.ruccliente = ((reader["ruccliente"]) is DBNull) ? string.Empty : reader["ruccliente"].ToString().Trim();
-                                response.dircliente = ((reader["dircliente"]) is DBNull) ? string.Empty : reader["dircliente"].ToString().Trim();
-                                response.tipdocidentidad = ((reader["tipdocidentidad"]) is DBNull) ? string.Empty : reader["tipdocidentidad"].ToString().Trim();
-                                response.docidentidad = ((reader["docidentidad"]) is DBNull) ? string.Empty : reader["docidentidad"].ToString().Trim();
-                                response.nombretipdocidentidad = ((reader["nombretipdocidentidad"]) is DBNull) ? string.Empty : reader["nombretipdocidentidad"].ToString().Trim();
-                                response.autorizado = ((reader["autorizado"]) is DBNull) ? string.Empty : reader["autorizado"].ToString().Trim();
-                                response.correocliente = ((reader["correocliente"]) is DBNull) ? string.Empty : reader["correocliente"].ToString().Trim();
-                                response.moneda_comprobantes = ((reader["moneda_comprobantes"]) is DBNull) ? string.Empty : reader["moneda_comprobantes"].ToString().Trim();
-                                response.flg_gratuito = ((reader["flg_gratuito"]) is DBNull) ? false : (bool)reader["flg_gratuito"];
-
-                            }
-                        }
-
-                        vResultadoTransaccion.IdRegistro = 0;
-                        vResultadoTransaccion.ResultadoCodigo = 0;
-                        vResultadoTransaccion.ResultadoDescripcion = string.Format("Registros Totales {0}", 1);
-                        vResultadoTransaccion.data = response;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                vResultadoTransaccion.IdRegistro = -1;
-                vResultadoTransaccion.ResultadoCodigo = -1;
-                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
-            }
-
-            return vResultadoTransaccion;
-
-        }
-
-        //
-        #endregion
-
-      
-        public async Task<ResultadoTransaccion<string>> ObtenerCodigoBarraJPG(string codComprobantePK,string pRutaArchivoJPG)
-        {
-            ResultadoTransaccion<string> vResultadoTransaccion = new ResultadoTransaccion<string>();
-            _metodoName = regex.Match(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType.Name).Groups[1].Value.ToString();
-
-            vResultadoTransaccion.NombreMetodo = _metodoName;
-            vResultadoTransaccion.NombreAplicacion = _aplicacionName;
-            string xMensaje = string.Empty;
-
-            try
-            {
-                Byte[] xObtenerByte;
-                string xRuta = string.Empty;
-
-                var objCPE = await this.GetComprobanteElectroncioCodVenta(codComprobantePK, 0, 0, "", "", "", "", "", "", 1);
-                if (objCPE.ResultadoCodigo == 0) {
-
-                    xObtenerByte  = objCPE.data.codigobarra;
-                    if (xObtenerByte.Length == 0)
-                    {
-                        //xMensaje = ConsultarInformacionComprobante(pCodComprobantePK, EntCompE("codcomprobantee"), EntCompE("tipo_comprobante"), EntCompE("ruc_emisor"), pRutaArchivoJPG, EntCompE("url_webservices"))
-                        //vResultadoTransaccion.data = xMensaje;
-                    }
-                    else {
-                        //Crea el directorio por si no existe
-                        if (Directory.Exists(pRutaArchivoJPG) == false) Directory.CreateDirectory(pRutaArchivoJPG);
-                        xRuta = pRutaArchivoJPG + codComprobantePK + ".jpg";
-                        File.WriteAllBytes(xRuta, xObtenerByte); //Creamos el archivo 
-                        vResultadoTransaccion.data = xMensaje;
-                    }
-                }
-                else
-                {
-                    xMensaje = "El comprobante que esta intentado obtener no es electrónico./ No existe el comprobante.";
-                    vResultadoTransaccion.data = xMensaje;
-                }
-            }
-            catch (Exception ex)
-            {
-                vResultadoTransaccion.IdRegistro = -1;
-                vResultadoTransaccion.ResultadoCodigo = -1;
-                vResultadoTransaccion.ResultadoDescripcion = ex.Message.ToString();
-                vResultadoTransaccion.data = ex.Message.ToString();
-            }
-
-            return vResultadoTransaccion;
-
-        }
-
 
     }
 }
